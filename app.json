@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Recursiv Brain",
+    "slug": "recursiv-brain",
+    "version": "1.0.0",
+    "scheme": "recursiv-brain",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
