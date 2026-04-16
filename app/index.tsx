@@ -90,10 +90,10 @@ export default function LandingScreen() {
 
       <View style={{ alignItems: 'center', zIndex: 2, paddingHorizontal: spacing['3xl'] }}>
         <Text variant="h2" color={colors.accent} align="center" style={{ letterSpacing: 4, fontWeight: '300', marginBottom: spacing.xl }}>
-          minds
+          recursiv
         </Text>
         <Text variant="hero" align="center" style={{ marginBottom: spacing.md }}>
-          Brain
+          brain
         </Text>
         <Text variant="body" color={colors.textSecondary} align="center" style={{ marginBottom: spacing['4xl'], maxWidth: 360 }}>
           Your business intelligence, always on.
