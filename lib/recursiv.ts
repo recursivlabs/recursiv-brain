@@ -7,6 +7,13 @@ export const BASE_URL =
 export const ORG_ID = process.env.EXPO_PUBLIC_RECURSIV_ORG_ID || '';
 export const PROJECT_ID = process.env.EXPO_PUBLIC_RECURSIV_PROJECT_ID || '';
 
+// The canonical Recursiv Brain agent. Pinned because the recursiv org has 100+
+// agents and the old `agents.list({ limit: 50 })` lookup could miss it, then
+// try to create a duplicate (username collision throws → grants fail). Always
+// target this exact agent. Override via env if the agent is ever recreated.
+export const BRAIN_AGENT_ID =
+  process.env.EXPO_PUBLIC_BRAIN_AGENT_ID || '1b1f0da8-ea7f-4031-a91c-eed6d59c6ad4';
+
 export function createAuthedSdk(apiKey: string): Recursiv {
   return new Recursiv({
     apiKey,

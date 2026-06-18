@@ -1,5 +1,5 @@
 import { Recursiv } from '@recursiv/sdk';
-import { ORG_ID } from './recursiv';
+import { BRAIN_AGENT_ID, ORG_ID } from './recursiv';
 
 let _agentId: string | null = null;
 
@@ -55,8 +55,16 @@ Recursiv is an AI infrastructure platform that lets businesses build and deploy 
 export async function ensureBrainAgent(sdk: Recursiv, forceRefresh?: boolean): Promise<string> {
   if (_agentId && !forceRefresh) return _agentId;
 
+  // Prefer the pinned canonical Brain id. The recursiv org has 100+ agents, so
+  // the old list({ limit: 50 }) lookup could miss it and fall through to a
+  // duplicate create (username collision → throw → grants fail).
+  if (BRAIN_AGENT_ID) {
+    _agentId = BRAIN_AGENT_ID;
+    return BRAIN_AGENT_ID;
+  }
+
   try {
-    const existing = await sdk.agents.list({ limit: 50 });
+    const existing = await sdk.agents.list({ limit: 100 });
     const found = existing.data?.find((a: any) =>
       a.username === 'recursiv_brain' || a.name === 'Recursiv Brain'
     );
@@ -80,6 +88,6 @@ export async function ensureBrainAgent(sdk: Recursiv, forceRefresh?: boolean): P
     organization_id: ORG_ID,
   });
 
-  _agentId = agent.data?.id || agent.id;
+  _agentId = agent.data?.id || (agent as any).id;
   return _agentId!;
 }

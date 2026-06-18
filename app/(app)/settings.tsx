@@ -15,29 +15,34 @@ const BUCKET_NAME = 'knowledge-base';
 
 // ── Popular integrations shown by default ──────────────────────
 
+// NOTE: these must be Composio toolkit IDs (see list_integration_apps), NOT
+// guessed names. Google apps use no-underscore ids (googlecalendar, not
+// google_calendar) and QuickBooks is not a Composio toolkit — connecting any
+// slug Composio doesn't recognize throws "Toolkit not found" in handleConnect,
+// which the UI swallows (spinner stops, no auth page). Keep this list aligned
+// with the catalog.
 const POPULAR_PROVIDERS = [
-  'quickbooks', 'stripe', 'gmail', 'slack', 'github',
-  'hubspot', 'google_calendar', 'notion', 'salesforce',
-  'google_sheets', 'jira', 'linear', 'discord', 'dropbox',
-  'google_drive', 'airtable', 'monday',
+  'stripe', 'gmail', 'slack', 'github',
+  'hubspot', 'googlecalendar', 'notion', 'salesforce',
+  'googlesheets', 'jira', 'linear', 'discord', 'dropbox',
+  'googledrive', 'airtable', 'monday',
 ];
 
 const PROVIDER_META: Record<string, { name: string; icon: string; category: string }> = {
-  quickbooks: { name: 'QuickBooks', icon: 'calculator-variant', category: 'Finance' },
   stripe: { name: 'Stripe', icon: 'credit-card-outline', category: 'Finance' },
   gmail: { name: 'Gmail', icon: 'email-outline', category: 'Email' },
   slack: { name: 'Slack', icon: 'message-text-outline', category: 'Messaging' },
   github: { name: 'GitHub', icon: 'github', category: 'Developer' },
   hubspot: { name: 'HubSpot', icon: 'account-group-outline', category: 'CRM' },
-  google_calendar: { name: 'Google Calendar', icon: 'calendar', category: 'Productivity' },
+  googlecalendar: { name: 'Google Calendar', icon: 'calendar', category: 'Productivity' },
   notion: { name: 'Notion', icon: 'notebook-outline', category: 'Productivity' },
   salesforce: { name: 'Salesforce', icon: 'cloud-outline', category: 'CRM' },
-  google_sheets: { name: 'Google Sheets', icon: 'table', category: 'Productivity' },
+  googlesheets: { name: 'Google Sheets', icon: 'table', category: 'Productivity' },
   jira: { name: 'Jira', icon: 'ticket-outline', category: 'Project Management' },
   linear: { name: 'Linear', icon: 'ray-start-arrow', category: 'Project Management' },
   discord: { name: 'Discord', icon: 'message-outline', category: 'Messaging' },
   dropbox: { name: 'Dropbox', icon: 'dropbox', category: 'Storage' },
-  google_drive: { name: 'Google Drive', icon: 'google-drive', category: 'Storage' },
+  googledrive: { name: 'Google Drive', icon: 'google-drive', category: 'Storage' },
   airtable: { name: 'Airtable', icon: 'table-large', category: 'Productivity' },
   monday: { name: 'Monday.com', icon: 'view-grid-outline', category: 'Project Management' },
 };
@@ -301,6 +306,7 @@ export default function SettingsScreen() {
   // ── Integrations state ──
   const [connections, setConnections] = React.useState<any[]>([]);
   const [connecting, setConnecting] = React.useState<string | null>(null);
+  const [connectError, setConnectError] = React.useState<string | null>(null);
   const [grantStatus, setGrantStatus] = React.useState<Record<string, GrantStatus>>({});
   const [searchQuery, setSearchQuery] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<any[] | null>(null);
@@ -358,6 +364,7 @@ export default function SettingsScreen() {
   // ── Connect integration ──
   async function handleConnect(provider: string) {
     if (!sdk) return;
+    setConnectError(null);
     setConnecting(provider);
     try {
       // Check auth type first
@@ -393,7 +400,7 @@ export default function SettingsScreen() {
       // OAuth flow
       const currentUrl = Platform.OS === 'web'
         ? window.location.origin + '/(app)/settings'
-        : 'https://minds-brain.on.recursiv.io/(app)/settings';
+        : 'https://recursiv-brain.on.recursiv.io/(app)/settings';
       const res = await sdk.integrations.connect({ provider, organization_id: ORG_ID, redirect_url: currentUrl });
       if (res.data?.already_connected) {
         const updated = await sdk.integrations.listConnections(ORG_ID);
@@ -401,8 +408,13 @@ export default function SettingsScreen() {
       } else if (res.data?.auth_url) {
         if (Platform.OS === 'web') window.location.href = res.data.auth_url;
         else await Linking.openURL(res.data.auth_url);
+      } else {
+        setConnectError(`${PROVIDER_META[provider]?.name || provider}: no auth URL returned`);
       }
-    } catch (err: any) { console.warn('Connect failed:', err.message); }
+    } catch (err: any) {
+      console.warn('Connect failed:', err.message);
+      setConnectError(`${PROVIDER_META[provider]?.name || provider}: ${err.message || 'connect failed'}`);
+    }
     finally { setConnecting(null); }
   }
 
@@ -596,6 +608,15 @@ export default function SettingsScreen() {
           </View>
 
           {searching && <ActivityIndicator color={colors.accent} style={{ marginBottom: spacing.lg }} />}
+
+          {connectError ? (
+            <View style={{
+              backgroundColor: colors.glass, borderWidth: 0.5, borderColor: colors.error,
+              borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg,
+            }}>
+              <Text variant="caption" color={colors.error}>{connectError}</Text>
+            </View>
+          ) : null}
 
           {/* Connected section */}
           {connections.length > 0 && !searchQuery && (
