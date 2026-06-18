@@ -383,7 +383,11 @@ export default function SettingsScreen() {
           // Composio sometimes requires "API Key" during initiation but doesn't list it in config fields
           const hasApiKeyField = fields.some((f: any) => f.name.toLowerCase().includes('api') || f.name.toLowerCase().includes('key'));
           if (!hasApiKeyField) {
-            fields.push({ name: 'API Key', display_name: 'API Key', description: 'Your API key from account settings', type: 'string', required: true });
+            // Composio expects the credential keyed as `api_key` (its standard
+            // API_KEY field name) — NOT the display label "API Key". Sending the
+            // wrong key means Composio never sees the key and the connection
+            // silently has no credential. Keep the label friendly via display_name.
+            fields.push({ name: 'api_key', display_name: 'API Key', description: 'Your API key from account settings', type: 'string', required: true });
           }
         } catch {
           // Fallback: generic API key field
@@ -424,6 +428,7 @@ export default function SettingsScreen() {
     // Check all required fields have values
     const hasAllFields = apiKeyModal.fields.every((f: any) => apiKeyValues[f.name]?.trim());
     if (!hasAllFields) return;
+    setConnectError(null);
     setApiKeySubmitting(true);
     try {
       // Build credentials from all field values
@@ -460,6 +465,8 @@ export default function SettingsScreen() {
       setApiKeyValues({});
     } catch (err: any) {
       console.warn('API key connect failed:', err.message);
+      setConnectError(`${apiKeyModal?.name || apiKeyModal?.provider}: ${err.message || 'connect failed'}`);
+      setApiKeyModal(null);
     } finally {
       setApiKeySubmitting(false);
     }
